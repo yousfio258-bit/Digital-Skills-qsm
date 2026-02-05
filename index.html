@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Examen : Digital Skills</title>
+    <style>
+        :root { --primary: #2563eb; --success: #16a34a; --error: #dc2626; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #1e293b; line-height: 1.6; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        h1 { text-align: center; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        h2 { margin-top: 40px; background: #e0f2fe; padding: 10px; border-radius: 6px; color: #0c4a6e; }
+        
+        .score-board { position: sticky; top: 10px; background: #1e293b; color: white; padding: 10px 20px; border-radius: 50px; text-align: center; font-weight: bold; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: fit-content; margin: 0 auto 20px auto; }
+
+        /* Styles QCM */
+        .qcm-block { margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: transform 0.2s; }
+        .qcm-block:hover { border-color: var(--primary); }
+        .question-text { font-weight: 600; font-size: 1.1em; margin-bottom: 15px; }
+        .options { display: grid; gap: 10px; }
+        .option-btn { background: white; border: 2px solid #cbd5e1; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; transition: 0.2s; font-size: 1em; }
+        .option-btn:hover { background: #f1f5f9; }
+        
+        /* États de réponse */
+        .correct-ans { background-color: #dcfce7 !important; border-color: var(--success) !important; color: #14532d; }
+        .wrong-ans { background-color: #fee2e2 !important; border-color: var(--error) !important; color: #7f1d1d; }
+        .explanation { display: none; margin-top: 10px; padding: 10px; background: #f0f9ff; border-left: 4px solid var(--primary); font-size: 0.9em; color: #0c4a6e; }
+
+        /* Styles Rédaction */
+        .redac-block { margin-bottom: 30px; background: #fff7ed; padding: 20px; border-radius: 8px; border: 1px solid #fed7aa; }
+        .correction-box { display: none; margin-top: 15px; background: white; padding: 15px; border: 1px solid #cbd5e1; border-radius: 6px; color: #334155; }
+        .toggle-btn { background: #f97316; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .toggle-btn:hover { background: #ea580c; }
+
+    </style>
+</head>
+<body>
+
+    <div class="score-board">Score : <span id="score">0</span> / 50</div>
+
+    <div class="container">
+        <h1>🎓 Examen Complet : Culture Digitale</h1>
+        <p>Ce test contient 50 QCM et 10 questions de réflexion. Cliquez sur une réponse pour voir le résultat immédiat.</p>
+
+        <h2>Partie 1 : Internet & Architecture Web</h2>
+        <div id="section-web"></div>
+
+        <h2>Partie 2 : E-Learning & Enseignement</h2>
+        <div id="section-elearning"></div>
+
+        <h2>Partie 3 : Outils Numériques & Excel</h2>
+        <div id="section-tools"></div>
+
+        <h2>Partie 4 : Questions de Rédaction (Exercices)</h2>
+        <div id="section-redaction"></div>
+    </div>
+
+<script>
+    // --- BANQUE DE DONNÉES DES 50 QUESTIONS QCM ---
+    const dbQCM = [
+        // INTERNET & WEB (20 Qts)
+        { cat: "web", q: "1. Internet est défini comme :", opts: ["Un ensemble de pages web", "Un réseau mondial d'ordinateurs interconnectés", "Un moteur de recherche"], ans: 1, exp: "Internet est l'infrastructure physique (câbles, routeurs) reliant les machines." },
+        { cat: "web", q: "2. Le protocole standard du Web est :", opts: ["HTTP", "FTP", "SMTP"], ans: 0, exp: "HTTP (HyperText Transfer Protocol) permet d'afficher les pages web." },
+        { cat: "web", q: "3. Que signifie 'www' ?", opts: ["World Wide Web", "Web World Wide", "World Web Wide"], ans: 0, exp: "C'est la toile mondiale accessible via Internet." },
+        { cat: "web", q: "4. Une adresse IP sert à :", opts: ["Stocker des fichiers", "Identifier de façon unique un appareil", "Créer un site web"], ans: 1, exp: "C'est comme le numéro de téléphone de l'ordinateur sur le réseau." },
+        { cat: "web", q: "5. Le DNS (Domain Name System) permet de :", opts: ["Sécuriser les emails", "Traduire un nom de domaine en IP", "Formater une page web"], ans: 1, exp: "Il transforme 'google.com' en '142.250.x.x'." },
+        { cat: "web", q: "6. Une adresse IPv4 est composée de :", opts: ["4 nombres séparés par des points", "8 groupes de chiffres et lettres", "Une suite de lettres"], ans: 0, exp: "Exemple : 192.168.1.1" },
+        { cat: "web", q: "7. Quel modèle décrit le fonctionnement du Web ?", opts: ["Client-Serveur", "Maitre-Esclave", "Pair-à-Pair"], ans: 0, exp: "Le navigateur (client) demande, le serveur répond." },
+        { cat: "web", q: "8. HTML signifie :", opts: ["HyperText Markup Language", "High Tech Main Language", "Home Tool Markup Language"], ans: 0, exp: "C'est le langage de structure des pages web." },
+        { cat: "web", q: "9. Le rôle du CSS est de :", opts: ["Gérer la base de données", "Mettre en forme (style) la page", "Rendre la page interactive"], ans: 1, exp: "CSS gère les couleurs, polices et la mise en page." },
+        { cat: "web", q: "10. Pour sécuriser un site, on utilise le protocole :", opts: ["HTTP", "HTTPS", "HTML"], ans: 1, exp: "Le 'S' signifie Secure (cryptage des données)." },
+        { cat: "web", q: "11. Un navigateur web sert à :", opts: ["Consulter des pages web", "Chercher des mots clés", "Envoyer des emails"], ans: 0, exp: "Chrome, Firefox, Edge sont des navigateurs." },
+        { cat: "web", q: "12. Google, Bing et Yahoo sont des :", opts: ["Navigateurs", "Moteurs de recherche", "Fournisseurs d'accès"], ans: 1, exp: "Ils indexent et permettent de trouver des sites." },
+        { cat: "web", q: "13. L'URL est :", opts: ["L'adresse unique d'une ressource web", "Le code source d'une page", "Un type de virus"], ans: 0, exp: "Uniform Resource Locator (ex: https://site.com/page)." },
+        { cat: "web", q: "14. Le 'Cloud' permet de :", opts: ["Refroidir l'ordinateur", "Stocker des données sur des serveurs distants", "Naviguer plus vite"], ans: 1, exp: "Ex: Google Drive, OneDrive." },
+        { cat: "web", q: "15. Un cookie sur le web est :", opts: ["Un petit fichier texte stocké par le navigateur", "Un virus dangereux", "Une extension de fichier"], ans: 0, exp: "Il sert à mémoriser vos préférences ou votre connexion." },
+        { cat: "web", q: "16. Le 'phishing' (hameçonnage) consiste à :", opts: ["Pêcher en ligne", "Voler des informations via de faux emails", "Installer un antivirus"], ans: 1, exp: "C'est une technique d'arnaque courante." },
+        { cat: "web", q: "17. Quel langage rend une page web dynamique ?", opts: ["HTML", "CSS", "JavaScript"], ans: 2, exp: "JS permet l'interactivité (boutons, animations)." },
+        { cat: "web", q: "18. Qu'est-ce qu'un FAI ?", opts: ["Fournisseur d'Accès Internet", "Fichier Archive Internet", "Format Audio International"], ans: 0, exp: "Ex: Maroc Telecom, Orange, Inwi." },
+        { cat: "web", q: "19. La balise <a> en HTML sert à :", opts: ["Mettre en gras", "Créer un lien hypertexte", "Insérer une image"], ans: 1, exp: "Elle permet de cliquer pour aller ailleurs." },
+        { cat: "web", q: "20. Le Web 2.0 se caractérise par :", opts: ["La lecture seule", "L'interaction et les réseaux sociaux", "La réalité virtuelle"], ans: 1, exp: "L'utilisateur devient créateur de contenu." },
+
+        // E-LEARNING (15 Qts)
+        { cat: "elearning", q: "21. E-learning signifie :", opts: ["Apprentissage électronique/en ligne", "École d'ingénieur", "Écriture numérique"], ans: 0, exp: "Utilisation des technologies pour apprendre." },
+        { cat: "elearning", q: "22. L'apprentissage 'Synchrone' se fait :", opts: ["En temps réel (direct)", "En différé", "Sans professeur"], ans: 0, exp: "Tout le monde est connecté au même moment." },
+        { cat: "elearning", q: "23. L'apprentissage 'Asynchrone' permet :", opts: ["De parler en direct", "D'apprendre à son rythme, n'importe quand", "D'avoir une présence physique obligée"], ans: 1, exp: "Accès aux ressources 24/7." },
+        { cat: "elearning", q: "24. Un LMS est :", opts: ["Learning Management System", "Local Media Server", "Large Memory Storage"], ans: 0, exp: "Plateforme de gestion de l'apprentissage (ex: Moodle)." },
+        { cat: "elearning", q: "25. Moodle est un exemple de :", opts: ["Réseau social", "Plateforme LMS", "Logiciel de montage"], ans: 1, exp: "C'est le LMS le plus utilisé au monde." },
+        { cat: "elearning", q: "26. Un MOOC est :", opts: ["Un cours en ligne ouvert à tous", "Une réunion privée", "Un virus informatique"], ans: 0, exp: "Massive Open Online Course." },
+        { cat: "elearning", q: "27. Zoom et Google Meet sont des outils de :", opts: ["Visioconférence", "Traitement de texte", "Dessin"], ans: 0, exp: "Utilisés pour le synchrone." },
+        { cat: "elearning", q: "28. L'enseignement 'Hybride' (Blended) combine :", opts: ["Présentiel et Distanciel", "Sport et Musique", "Théorie et Pratique"], ans: 0, exp: "Mélange de classe physique et de travail en ligne." },
+        { cat: "elearning", q: "29. Un avantage du E-learning est :", opts: ["L'isolement", "La flexibilité géographique et temporelle", "Le coût élevé"], ans: 1, exp: "On peut apprendre de partout." },
+        { cat: "elearning", q: "30. La 'Classe inversée' consiste à :", opts: ["Apprendre la leçon chez soi et faire les exercices en classe", "Faire cours dans la cour de récréation", "Inverser les rôles prof/élève"], ans: 0, exp: "Le temps de classe sert à la pratique." },
+        { cat: "elearning", q: "31. La gamification (ludification) sert à :", opts: ["Jouer au lieu de travailler", "Utiliser des mécanismes de jeu pour motiver", "Pirater un jeu"], ans: 1, exp: "Badges, points, classements pour engager l'élève." },
+        { cat: "elearning", q: "32. Un 'Forum' sur un LMS permet :", opts: ["Une discussion asynchrone", "Une discussion vidéo en direct", "De corriger les copies automatiquement"], ans: 0, exp: "On poste un message et on attend la réponse." },
+        { cat: "elearning", q: "33. Pour suivre une visioconférence, il est indispensable d'avoir :", opts: ["Une imprimante", "Une connexion Internet stable", "Un scanner"], ans: 1, exp: "Le flux vidéo demande de la bande passante." },
+        { cat: "elearning", q: "34. Un 'Webinaire' est :", opts: ["Un séminaire en ligne", "Un site web binaire", "Un logiciel de messagerie"], ans: 0, exp: "Contraction de Web et Séminaire." },
+        { cat: "elearning", q: "35. L'auto-évaluation permet à l'apprenant de :", opts: ["Juger son professeur", "Mesurer ses propres progrès", "Quitter le cours"], ans: 1, exp: "Tester ses connaissances soi-même." },
+
+        // OUTILS & EXCEL (15 Qts)
+        { cat: "tools", q: "36. Excel est un logiciel de :", opts: ["Traitement de texte", "Tableur", "Présentation"], ans: 1, exp: "Il sert à faire des tableaux et calculs." },
+        { cat: "tools", q: "37. Dans Excel, une formule commence toujours par :", opts: ["#", "=", "$"], ans: 1, exp: "Exemple : =SOMME(A1:A5)" },
+        { cat: "tools", q: "38. La fonction SOMME permet de :", opts: ["Additionner des valeurs", "Calculer la moyenne", "Trier des noms"], ans: 0, exp: "Additionne une plage de cellules." },
+        { cat: "tools", q: "39. L'intersection d'une ligne et d'une colonne s'appelle :", opts: ["Une plage", "Une cellule", "Une feuille"], ans: 1, exp: "Exemple : Cellule B2." },
+        { cat: "tools", q: "40. Quel format de fichier est idéal pour un document non modifiable ?", opts: [".docx", ".pdf", ".xlsx"], ans: 1, exp: "Portable Document Format." },
+        { cat: "tools", q: "41. 'Ctrl + C' sert à :", opts: ["Couper", "Coller", "Copier"], ans: 2, exp: "Raccourci universel." },
+        { cat: "tools", q: "42. 'Ctrl + V' sert à :", opts: ["Valider", "Coller", "Vérifier"], ans: 1, exp: "Pour coller ce qui a été copié." },
+        { cat: "tools", q: "43. La fonction MOYENNE d'Excel calcule :", opts: ["Le total", "La valeur médiane", "La moyenne arithmétique"], ans: 2, exp: "Somme divisée par le nombre." },
+        { cat: "tools", q: "44. Un logiciel 'Open Source' signifie :", opts: ["Gratuit et code accessible", "Payant et fermé", "Piraté"], ans: 0, exp: "Le code est ouvert à la communauté (ex: LibreOffice)." },
+        { cat: "tools", q: "45. PowerPoint est utilisé pour :", opts: ["Les calculs complexes", "Les présentations visuelles", "Envoyer des emails"], ans: 1, exp: "Création de diapositives (slides)." },
+        { cat: "tools", q: "46. Google Drive et Dropbox sont des services de :", opts: ["Streaming vidéo", "Stockage Cloud", "Réseau social"], ans: 1, exp: "Pour sauvegarder et partager des fichiers." },
+        { cat: "tools", q: "47. Dans un email, le champ 'Cci' sert à :", opts: ["Mettre en copie visible", "Mettre en copie cachée (invisible)", "Joindre un fichier"], ans: 1, exp: "Les autres destinataires ne voient pas cette adresse." },
+        { cat: "tools", q: "48. Quelle extension correspond à une image ?", opts: [".mp3", ".jpg", ".exe"], ans: 1, exp: "JPEG ou PNG sont des images." },
+        { cat: "tools", q: "49. Un système d'exploitation (OS) est :", opts: ["Le logiciel principal gérant l'ordinateur", "Un antivirus", "Une souris"], ans: 0, exp: "Ex: Windows, MacOS, Android, Linux." },
+        { cat: "tools", q: "50. Pour protéger ses données, il est recommandé de :", opts: ["Utiliser le mot de passe '123456'", "Faire des sauvegardes régulières", "Partager ses mots de passe"], ans: 1, exp: "La sauvegarde protège contre la perte ou le vol." }
+    ];
+
+    // --- BANQUE DE DONNÉES RÉDACTION ---
+    const dbRedac = [
+        { q: "1. Définir 'Fracture Numérique'.", a: "C'est l'inégalité d'accès ou de compétence vis-à-vis des technologies numériques entre différentes populations (sociaux, géographiques, générationnels)." },
+        { q: "2. Quelle est la différence entre Internet et le Web ?", a: "Internet est le réseau physique mondial (tuyaux). Le Web est un service (pages, sites) qui circule DANS Internet via le protocole HTTP." },
+        { q: "3. Citer 3 avantages du E-learning pour une entreprise.", a: "1. Réduction des coûts (déplacements).<br>2. Formation uniforme pour tous les employés.<br>3. Suivi précis des progrès via LMS." },
+        { q: "4. Qu'est-ce que l'identité numérique ?", a: "C'est l'ensemble des traces laissées par une personne sur Internet (réseaux sociaux, commentaires, blogs) qui définissent son image en ligne." },
+        { q: "5. Expliquer le rôle d'un modérateur dans un forum.", a: "Le modérateur surveille les échanges, supprime les contenus inappropriés et s'assure que les règles de la communauté sont respectées." },
+        { q: "6. Donnez la syntaxe d'une fonction SI basique dans Excel.", a: "=SI(Condition ; Valeur_si_Vrai ; Valeur_si_Faux)<br>Ex: =SI(A1>10 ; 'Admis' ; 'Recalé')" },
+        { q: "7. Qu'est-ce que le RGPD ?", a: "Règlement Général sur la Protection des Données. C'est une loi européenne qui protège les données personnelles des utilisateurs." },
+        { q: "8. Citer 2 risques liés à l'usage excessif des écrans.", a: "1. Troubles du sommeil (lumière bleue).<br>2. Isolement social ou sédentarité." },
+        { q: "9. Pourquoi compresser un fichier (zip) ?", a: "Pour réduire sa taille (poids) afin de l'envoyer plus facilement par email ou pour regrouper plusieurs fichiers en un seul." },
+        { q: "10. Définir le concept de 'Responsive Design'.", a: "C'est la capacité d'un site web à adapter son affichage automatiquement à la taille de l'écran (Ordinateur, Tablette, Mobile)." }
+    ];
+
+    // --- FONCTIONS D'AFFICHAGE ---
+    let score = 0;
+
+    function renderQCM() {
+        dbQCM.forEach((item, index) => {
+            let containerId = "";
+            if(item.cat === "web") containerId = "section-web";
+            else if(item.cat === "elearning") containerId = "section-elearning";
+            else containerId = "section-tools";
+
+            const block = document.createElement("div");
+            block.className = "qcm-block";
+            block.innerHTML = `
+                <div class="question-text">${item.q}</div>
+                <div class="options">
+                    ${item.opts.map((opt, i) => `
+                        <button class="option-btn" onclick="checkAnswer(this, ${index}, ${i})">${opt}</button>
+                    `).join('')}
+                </div>
+                <div class="explanation" id="exp-${index}">${item.exp}</div>
+            `;
+            document.getElementById(containerId).appendChild(block);
+        });
+    }
+
+    function checkAnswer(btn, qIndex, choiceIndex) {
+        // Empêcher le re-clic
+        const parent = btn.parentElement;
+        if(parent.getAttribute("data-answered")) return;
+        parent.setAttribute("data-answered", "true");
+
+        const qData = dbQCM[qIndex];
+        const allBtns = parent.querySelectorAll(".option-btn");
+        const explanation = document.getElementById(`exp-${qIndex}`);
+
+        if(choiceIndex === qData.ans) {
+            btn.classList.add("correct-ans");
+            score++;
+            explanation.innerHTML = "✅ <b>Bravo !</b> " + explanation.innerHTML;
+        } else {
+            btn.classList.add("wrong-ans");
+            allBtns[qData.ans].classList.add("correct-ans"); // Montrer la bonne réponse
+            explanation.innerHTML = "❌ <b>Erreur.</b> " + explanation.innerHTML;
+        }
+        
+        explanation.style.display = "block";
+        document.getElementById("score").innerText = score;
+    }
+
+    function renderRedac() {
+        const container = document.getElementById("section-redaction");
+        dbRedac.forEach((item, index) => {
+            const div = document.createElement("div");
+            div.className = "redac-block";
+            div.innerHTML = `
+                <div class="question-text">${item.q}</div>
+                <textarea rows="3" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;" placeholder="Écrivez votre réponse ici pour vous entraîner..."></textarea>
+                <button class="toggle-btn" onclick="toggleCorrection('cor-${index}')">Voir le corrigé type</button>
+                <div id="cor-${index}" class="correction-box"><b>Réponse type :</b><br>${item.a}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function toggleCorrection(id) {
+        const box = document.getElementById(id);
+        box.style.display = box.style.display === "block" ? "none" : "block";
+    }
+
+    // Lancer l'application
+    renderQCM();
+    renderRedac();
+
+</script>
+</body>
+</html>
